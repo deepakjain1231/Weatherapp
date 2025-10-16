@@ -16,10 +16,9 @@ extension TimeInterval {
 
 
 extension TimeInterval {
-    //Get date of week
     func toDayofWeek() -> String {
         let date = Date(timeIntervalSince1970: self)
-        var dateformatter = DateFormatter()
+        let dateformatter = DateFormatter()
         dateformatter.dateFormat = "EEE, MMM d"
         return dateformatter.string(from: date)
     }
