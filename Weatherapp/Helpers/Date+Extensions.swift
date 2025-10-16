@@ -16,7 +16,7 @@ extension TimeInterval {
 
 
 extension TimeInterval {
-    //Date Extension
+    //Get date of week
     func toDayofWeek() -> String {
         let date = Date(timeIntervalSince1970: self)
         var dateformatter = DateFormatter()
