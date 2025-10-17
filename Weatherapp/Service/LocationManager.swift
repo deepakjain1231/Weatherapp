@@ -1,18 +1,20 @@
 //
 //  LocationManager.swift
-//  weather_app
+//  Weatherapp
 //
 //  Created by DEEPAK JAIN on 16/10/25.
 //
 
-import ObjectiveC
 import Foundation
 import CoreLocation
 
 final class LocationManager: NSObject, ObservableObject {
+    
     private let manager = CLLocationManager()
     @Published var lastLocation: CLLocation?
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
+    
+    @Published var errorState: Error_State = .none
     
     override init() {
         super.init()
@@ -40,11 +42,14 @@ extension LocationManager: CLLocationManagerDelegate {
             if status == .authorizedWhenInUse || status == .authorizedAlways {
                 manager.requestLocation()
             }
+            else if status == .denied {
+                self.errorState = .locationNotAvailable
+            }
         }
         
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {
-        print("location manage error: \(error)")
+        print("location manager error: \(error)")
     }
 }

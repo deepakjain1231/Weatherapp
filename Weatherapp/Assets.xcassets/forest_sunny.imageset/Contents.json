@@ -1,11 +1,11 @@
 {
   "images" : [
     {
-      "filename" : "forest_sunny.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "forest_sunny.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
