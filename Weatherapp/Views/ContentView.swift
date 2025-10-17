@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  weather_app
+//  Weatherapp
 //
 //  Created by DEEPAK JAIN on 16/10/25.
 //
@@ -10,109 +10,144 @@ import CoreLocation
 
 struct ContentView: View {
     
-    @EnvironmentObject var locationManger: LocationManager
-    @EnvironmentObject var weatherViewModel: WeatherViewModel
+    @EnvironmentObject var location_Manager: LocationManager
+    @StateObject private var view_Model = WeatherViewModel()
     
     var body: some View {
         ZStack {
-            LinearGradient(gradient: Gradient.init(colors: [Color.black, Color.blue]), startPoint: .top, endPoint: .bottom)
+            backgroundWeatherIImage()
                 .ignoresSafeArea()
             
-            VStack(spacing: 16) {
-                header
-                if let weather = weatherViewModel.weather {
-                    CurrentWeatherView(current: weather.current, timezone: weather.timezone)
-                    forecastList(daily: Array(weather.daily.prefix(5)))
+            VStack(spacing: 0) {
+                // Top image
+                Image(uiImage: getWeatherImage(for: view_Model.condition))
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 380)
+                    .clipped()
+                    .overlay(
+                        VStack(spacing: -8) {
+                            Text("\(view_Model.currentTemp)°")
+                                .font(.AppFontSemiBold(70))
+                                .foregroundColor(.white)
+                            Text(view_Model.condition.uppercased())
+                                .font(.AppFontMedium(28))
+                                .foregroundColor(.white)
+                        }
+                            .offset(y: -28)
+                    )
+                
+                // Min, Current, Max
+                HStack {
+                    setMinMaxCurrentSection(temp: view_Model.minTemp, label: strText.strMin.rawValue)
+                    Spacer()
+                    setMinMaxCurrentSection(temp: view_Model.currentTemp, label: strText.strCurrent.rawValue)
+                    Spacer()
+                    setMinMaxCurrentSection(temp: view_Model.maxTemp, label: strText.strMax.rawValue)
                 }
-                else if weatherViewModel.isLoading {
-                    ProgressView("Fatching weather").tint(.white)
+                .padding(.horizontal, 30)
+                .padding(.top, 8)
+                
+                Rectangle()
+                    .fill(Color.white)
+                    .frame(height: 1)
+                    .padding(.horizontal, 0)
+                    .padding(.top, 8)
+                
+                // Forecast
+                VStack(spacing: 18) {
+                    ForEach(view_Model.forecast) { day in
+                        HStack {
+                            Text(day.day)
+                                .foregroundColor(.whiteDark)
+                                .font(.AppFontRegular(16))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Image(uiImage: weatherIcon(for: day.condition))
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 25, height: 25)
+                            Text("\(Int(day.avgTemp))°")
+                                .foregroundColor(.whiteDark)
+                                .font(.AppFontMedium(16))
+                                .frame(maxWidth: .infinity, alignment: .trailing)
+                        }
+                    }
                 }
-                else if let error = weatherViewModel.strErrorMsg {
-                    Text(error)
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                        .padding()
-                }
-                else {
-                    Text("Waiting for loation")
-                        .foregroundColor(.white)
-                }
+                .padding(.horizontal, 32)
+                .padding(.top, 25)
                 
                 Spacer()
-                
-                HStack {
-                    Button(action: refresh) {
-                        Label("Refresh", systemImage: "arrow.clockwise")
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color.blue)
-                            .cornerRadius(12)
-                    }
-                    
-                    Button(action: { locationManger.requestLocation() }) {
-                        Label("Locate", systemImage: "location.fill")
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color.blue)
-                            .cornerRadius(12)
-                    }
-                    
-                }
             }
-            .padding()
-            
         }
-        .onChange(of: locationManger.lastLocation, { oldValue, newLoc in
+        .ignoresSafeArea()
+        .onChange(of: location_Manager.lastLocation) { _, newLoc in
             if let loc = newLoc {
-                weatherViewModel.loadWeatherData(lat: loc.coordinate.latitude, lang: loc.coordinate.longitude)
-            }
-        })
-        
-    }
-    
-    
-    var header: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text("Forest Weather")
-                    .font(.largeTitle).bold()
-                    .foregroundColor(.white)
-                Text(Date(), style: .date)
-                    .foregroundColor(.white)
-                    .font(.subheadline)
-            }
-             Spacer()
-            
-        }
-    }
-    
-    func refresh() {
-        if let loc = locationManger.lastLocation {
-            weatherViewModel.loadWeatherData(lat: loc.coordinate.latitude, lang: loc.coordinate.longitude)
-        }
-        else {
-            locationManger.requestLocation()
-        }
-    }
-    
-    func forecastList(daily: [Daily]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("5-Day Forecast")
-                .foregroundColor(.white)
-                .font(.headline)
-            ForEach(daily) { day in
-                ForecastRowView(day: day)
+                view_Model.fetchWeather(latitude: loc.coordinate.latitude, longitude: loc.coordinate.longitude)
             }
         }
-        .padding()
-        .background(Color.white.opacity(0.08))
-        .cornerRadius(16)
-        
+        .alert(item: Binding<Error_State?>(
+            get: {
+                if location_Manager.errorState != .none {
+                    return location_Manager.errorState
+                } else if view_Model.errorState != .none {
+                    return view_Model.errorState
+                } else {
+                    return nil
+                }
+            },
+            set: { _ in
+                location_Manager.errorState = .none
+                view_Model.errorState = .none
+            }
+        )) { err in
+            return Alert(title: Text(strText.strErrorTitle.rawValue), message: Text(err.message), dismissButton: .default(Text(strText.strOk.rawValue)))
+        }
     }
     
+    // MARK: - Helper Views
+
+    func setMinMaxCurrentSection(temp: Int, label: String) -> some View {
+        VStack(spacing: -2) {
+            Text("\(temp)°")
+                .font(.AppFontMedium(16))
+                .foregroundColor(.whiteDark)
+            Text(label)
+                .font(.AppFontRegular(12))
+                .foregroundColor(.whiteDark)
+        }
+    }
     
+    func weatherIcon(for condition: String) -> UIImage {
+        switch condition.lowercased() {
+        case "clouds": return .iconClear
+        case "rain": return .iconRain
+        case "clear": return .iconPartlysunny
+        case "snow": return .iconRain
+        default: return .iconClear
+        }
+    }
+    
+    func backgroundWeatherIImage() -> some View {
+        switch view_Model.condition.lowercased() {
+        case "clouds": return Color.cloudy
+        case "rain": return Color.rainy
+        case "clear": return Color.sunny
+        default: return Color.sunny
+        }
+    }
+    
+    func getWeatherImage(for condition: String) -> UIImage {
+        switch condition.lowercased() {
+        case "clouds": return .forestCloudy
+        case "rain": return .forestRainy
+        case "clear": return .forestSunny
+        default: return .forestCloudy
+        }
+    }
 }
 
+// MARK: - Preview
 #Preview {
     ContentView()
 }
+

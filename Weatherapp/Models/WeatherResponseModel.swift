@@ -1,48 +1,50 @@
 //
 //  WeatherResponseModel.swift
-//  weather_app
+//  Weatherapp
 //
 //  Created by DEEPAK JAIN on 16/10/25.
 //
 
 import Foundation
 
+struct CurrentWeatherResponse: Codable {
+    let main: MainClass
+    let weather: [Weather]
+}
+
 struct WeatherResponseModel: Codable {
-    let lat: Double
-    let longi: Double
-    let timezone: String
-    let current: Current
-    let daily: [Daily]
+    let list: [ForecastItem]
+    let city: City
 }
 
-struct Current: Codable {
-    let dt: TimeInterval
-    let sunrise: TimeInterval?
-    let sunset: TimeInterval?
+struct City: Codable {
+    let name: String
+    let country: String
+}
+
+struct ForecastItem: Codable, Identifiable {
+    let id = UUID()
+    let dt: Int
+    let main: MainClass
+    let weather: [Weather]
+}
+
+struct MainClass: Codable {
     let temp: Double
-    let feels_like: Double?
-    let humidity: Int?
-    let weather: [Weather]
-}
-
-struct Daily: Codable, Identifiable {
-    var id: TimeInterval { dt }
-    let dt: TimeInterval
-    let sunrise: TimeInterval?
-    let sunset: TimeInterval?
-    let temp: Temp
-    let weather: [Weather]
+    let temp_min: Double
+    let temp_max: Double
 }
 
 struct Weather: Codable {
-    let id: Int
     let main: String
     let description: String
     let icon: String
 }
 
-struct Temp: Codable {
-    let day: Double
-    let min: Double
-    let max: Double
+// MARK: - Daily Forecast Model
+struct DailyForecast: Identifiable {
+    let id = UUID()
+    let day: String
+    let condition: String
+    let avgTemp: Double
 }

@@ -1,6 +1,6 @@
 //
 //  weather_appApp.swift
-//  weather_app
+//  Weatherapp
 //
 //  Created by DEEPAK JAIN on 16/10/25.
 //
@@ -21,6 +21,8 @@ struct weather_appApp: App {
                 .onAppear() {
                     locationManage.requestLocation()
                 }
+            
+            
         }
     }
 }

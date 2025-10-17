@@ -1,6 +1,6 @@
 //
 //  weather_appTests.swift
-//  weather_appTests
+//  WeatherappTests
 //
 //  Created by DEEPAK JAIN on 16/10/25.
 //
