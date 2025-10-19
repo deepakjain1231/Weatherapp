@@ -78,6 +78,19 @@ struct ContentView: View {
                 
                 Spacer()
             }
+            
+            // MARK: Loading Overlay
+            if view_Model.isLoading {
+                ZStack {
+                    Color.black.opacity(0.4).ignoresSafeArea()
+                    ProgressView("")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(1.4)
+                }
+                .transition(.opacity)
+            }
         }
         .ignoresSafeArea()
         .onChange(of: location_Manager.lastLocation) { _, newLoc in

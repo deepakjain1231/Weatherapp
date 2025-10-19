@@ -19,6 +19,7 @@ class WeatherViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var condition: String = "—"
     @Published var forecast: [DailyForecast] = []
     
+    @Published var isLoading: Bool = false
     @Published var errorState: Error_State = .none
     @ObservedObject private var network = Network.shared
     
@@ -27,11 +28,18 @@ class WeatherViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     func callAPIforGetCurrentWeather(lat: Double, lang: Double) {
         guard errorState != .noInternet else { return }
+        DispatchQueue.main.async { self.isLoading = true }
         
         let urlString = String(format: API().str_WeatherURL, "\(lat)", "\(lang)", APIKey)
         guard let url = URL(string: urlString) else { return }
         
         URLSession.shared.dataTask(with: url) { data, _, error in
+            defer {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.isLoading = false
+                }
+            }
+            
             if let _ = error {
                 DispatchQueue.main.async { self.errorState = .apiError }
                 return
@@ -63,11 +71,17 @@ class WeatherViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - Fetch Forecast
     func callAPIforGetForecastWeather(lat: Double, lang: Double) {
         guard errorState != .noInternet else { return }
+        DispatchQueue.main.async { self.isLoading = true }
         
         let urlString = String(format: API().str_ForecastURL, "\(lat)", "\(lang)", APIKey)
         guard let url = URL(string: urlString) else { return }
         
         URLSession.shared.dataTask(with: url) { data, _, error in
+            defer {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.isLoading = false
+                }
+            }
             
             if let _ = error {
                 DispatchQueue.main.async { self.errorState = .apiError }
@@ -118,6 +132,7 @@ class WeatherViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - API CALL BOTH
     func fetchWeather(latitude: Double, longitude: Double) {
         if network.isConnectedToNetwork {
+            isLoading = true
             callAPIforGetCurrentWeather(lat: latitude, lang: longitude)
             callAPIforGetForecastWeather(lat: latitude, lang: longitude)
         }
